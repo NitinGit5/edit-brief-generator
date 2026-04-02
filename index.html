@@ -448,18 +448,10 @@
 
     <div class="field">
       <label>Video Type</label>
-      <select id="video-type">
+      <select id="video-type" onchange="updateDuration()">
         <option value="">Select type...</option>
-        <option>Wedding film</option>
-        <option>Music video</option>
-        <option>Brand / commercial</option>
-        <option>Travel / cinematic vlog</option>
-        <option>Short film</option>
-        <option>Documentary</option>
-        <option>Social media reel</option>
-        <option>Product showcase</option>
-        <option>Event highlight</option>
-        <option>Other</option>
+        <option value="short">Short form reel / YT Short</option>
+        <option value="long">Long form talking head</option>
       </select>
     </div>
 
@@ -467,26 +459,17 @@
       <label>Target Platform</label>
       <select id="platform">
         <option value="">Select platform...</option>
-        <option>Instagram Reels</option>
-        <option>YouTube</option>
-        <option>YouTube Shorts</option>
+        <option>Instagram</option>
         <option>Facebook</option>
-        <option>Wedding film (personal)</option>
-        <option>Cinema / festival</option>
-        <option>Website</option>
+        <option>YouTube Shorts</option>
+        <option>YouTube</option>
       </select>
     </div>
 
     <div class="field">
       <label>Approx. Duration</label>
       <select id="duration">
-        <option value="">Select length...</option>
-        <option>15–30 seconds (reel)</option>
-        <option>1–2 minutes</option>
-        <option>3–5 minutes</option>
-        <option>5–10 minutes</option>
-        <option>10–20 minutes (full film)</option>
-        <option>20+ minutes</option>
+        <option value="">Select video type first...</option>
       </select>
     </div>
 
@@ -583,7 +566,7 @@
 
 CLIENT BRIEF:
 - Project: ${client || 'Untitled project'}
-- Video type: ${videoType}
+- Video type: ${document.getElementById('video-type').options[document.getElementById('video-type').selectedIndex].text}
 - Platform: ${platform || 'Not specified'}
 - Duration: ${duration || 'Not specified'}
 - Mood/vibe: ${moods.join(', ')}
@@ -641,6 +624,23 @@ Return ONLY a JSON object with these exact keys (no markdown, no backticks, no e
 
       renderGuide(guide, client);
 
+      // Silently notify via Formspree
+      fetch('https://formspree.io/f/xkopvnvb', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+          project:   client || 'Untitled',
+          videoType: videoType,
+          platform:  platform || 'Not specified',
+          duration:  duration || 'Not specified',
+          moods:     moods.join(', '),
+          music:     music || '—',
+          references: refs || '—',
+          notes:     notes || '—',
+          submitted: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
+        })
+      }).catch(() => {}); // silent fail — doesn't affect user experience
+
     } catch (err) {
       errorEl.textContent = 'Something went wrong generating the guide. Please try again.';
       errorEl.classList.add('visible');
@@ -685,6 +685,19 @@ Return ONLY a JSON object with these exact keys (no markdown, no backticks, no e
     document.getElementById('output').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
+
+  function updateDuration() {
+    const type = document.getElementById('video-type').value;
+    const dur = document.getElementById('duration');
+    dur.innerHTML = '';
+    if (type === 'short') {
+      dur.innerHTML = '<option value="">Select duration...</option><option>15–30 seconds</option><option>30–60 seconds</option>';
+    } else if (type === 'long') {
+      dur.innerHTML = '<option value="">Select duration...</option><option>8–10 minutes</option>';
+    } else {
+      dur.innerHTML = '<option value="">Select video type first...</option>';
+    }
+  }
   function copyAll() {
     navigator.clipboard.writeText(rawOutputText).then(() => {
       const btn = document.querySelector('.btn-copy');
