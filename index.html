@@ -426,6 +426,47 @@
     .guide-grid { grid-template-columns: 1fr; }
     .page-title { font-size: 38px; }
   }
+
+  .link-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  .link-row input { flex: 1; margin-bottom: 0; }
+
+  .btn-remove {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    width: 32px;
+    height: 40px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    flex-shrink: 0;
+    transition: all 0.15s;
+  }
+
+  .btn-remove:hover { border-color: var(--accent); color: var(--accent); }
+
+  .btn-add-link {
+    background: transparent;
+    border: 1px dashed var(--border-bright);
+    color: var(--text-muted);
+    font-family: var(--font-body);
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    padding: 7px 14px;
+    border-radius: 3px;
+    cursor: pointer;
+    margin-top: 2px;
+    transition: all 0.15s;
+  }
+
+  .btn-add-link:hover { border-color: var(--accent); color: var(--text); }
+
 </style>
 </head>
 <body>
@@ -448,10 +489,12 @@
 
     <div class="field">
       <label>Video Type</label>
-      <select id="video-type" onchange="updateDuration()">
+      <select id="video-type">
         <option value="">Select type...</option>
-        <option value="short">Short form reel / YT Short</option>
-        <option value="long">Long form talking head</option>
+        <option>Talking head</option>
+        <option>Faceless / voiceover</option>
+        <option>Motion graphics & typography</option>
+        <option>Mixed (talking head + motion graphics)</option>
       </select>
     </div>
 
@@ -467,36 +510,39 @@
     </div>
 
     <div class="field">
-      <label>Approx. Duration</label>
+      <label>Format</label>
       <select id="duration">
-        <option value="">Select video type first...</option>
+        <option value="">Select format...</option>
+        <option>Short form (Reels / YT Shorts)</option>
+        <option>Long form (YouTube video)</option>
       </select>
     </div>
 
     <div class="field form-full">
       <label>Mood & Vibe</label>
       <div class="mood-grid" id="mood-grid">
-        <label class="mood-chip"><input type="checkbox" value="Cinematic"> Cinematic</label>
-        <label class="mood-chip"><input type="checkbox" value="Emotional / teary"> Emotional</label>
         <label class="mood-chip"><input type="checkbox" value="High energy"> High energy</label>
-        <label class="mood-chip"><input type="checkbox" value="Dark & moody"> Dark & moody</label>
-        <label class="mood-chip"><input type="checkbox" value="Warm & golden"> Warm & golden</label>
         <label class="mood-chip"><input type="checkbox" value="Clean & minimal"> Clean & minimal</label>
-        <label class="mood-chip"><input type="checkbox" value="Vintage / film grain"> Vintage / film</label>
-        <label class="mood-chip"><input type="checkbox" value="Fast cuts & kinetic"> Kinetic</label>
-        <label class="mood-chip"><input type="checkbox" value="Slow & dreamy"> Slow & dreamy</label>
-        <label class="mood-chip"><input type="checkbox" value="Bold & commercial"> Bold & commercial</label>
+        <label class="mood-chip"><input type="checkbox" value="Bold & punchy"> Bold & punchy</label>
+        <label class="mood-chip"><input type="checkbox" value="Educational"> Educational</label>
+        <label class="mood-chip"><input type="checkbox" value="Playful & fun"> Playful & fun</label>
       </div>
     </div>
 
     <div class="field form-full">
-      <label>Music Vibe (describe or give examples)</label>
-      <input type="text" id="music" placeholder="e.g. orchestral swells, lo-fi hip hop, Arijit Singh ballad style, no lyrics...">
+      <label>Music Vibe — paste links or describe</label>
+      <div id="music-links">
+        <div class="link-row"><input type="text" class="music-link" placeholder="e.g. youtube.com/watch?v=... or 'lo-fi hip hop, no lyrics'"><button class="btn-remove" onclick="removeLink(this)" title="Remove">✕</button></div>
+      </div>
+      <button class="btn-add-link" onclick="addLink('music-links', 'music-link', 'Add another music link or description')">+ Add another</button>
     </div>
 
     <div class="field form-full">
-      <label>Reference Videos or Editors (if any)</label>
-      <input type="text" id="references" placeholder="e.g. Edit Lobby style, Stillmotion, Sam Kolder, @username on IG...">
+      <label>Reference Videos or Editors — paste links</label>
+      <div id="ref-links">
+        <div class="link-row"><input type="text" class="ref-link" placeholder="e.g. youtube.com/watch?v=... or @editlobby"><button class="btn-remove" onclick="removeLink(this)" title="Remove">✕</button></div>
+      </div>
+      <button class="btn-add-link" onclick="addLink('ref-links', 'ref-link', 'Add another reference')">+ Add another</button>
     </div>
 
     <div class="field form-full">
@@ -543,8 +589,8 @@
     const videoType = document.getElementById('video-type').value;
     const platform  = document.getElementById('platform').value;
     const duration  = document.getElementById('duration').value;
-    const music     = document.getElementById('music').value.trim();
-    const refs      = document.getElementById('references').value.trim();
+    const music     = [...document.querySelectorAll('.music-link')].map(i => i.value.trim()).filter(Boolean).join(', ');
+    const refs      = [...document.querySelectorAll('.ref-link')].map(i => i.value.trim()).filter(Boolean).join(', ');
     const notes     = document.getElementById('notes').value.trim();
     const moods     = [...document.querySelectorAll('.mood-chip.active')].map(c => c.querySelector('input').value);
 
@@ -698,6 +744,23 @@ Return ONLY a JSON object with these exact keys (no markdown, no backticks, no e
       dur.innerHTML = '<option value="">Select video type first...</option>';
     }
   }
+
+  function addLink(containerId, inputClass, placeholder) {
+    const container = document.getElementById(containerId);
+    const row = document.createElement('div');
+    row.className = 'link-row';
+    row.innerHTML = '<input type="text" class="' + inputClass + '" placeholder="' + placeholder + '"><button class="btn-remove" onclick="removeLink(this)" title="Remove">✕</button>';
+    container.appendChild(row);
+    row.querySelector('input').focus();
+  }
+
+  function removeLink(btn) {
+    const container = btn.closest('[id$="-links"]');
+    if (container.querySelectorAll('.link-row').length > 1) {
+      btn.closest('.link-row').remove();
+    }
+  }
+
   function copyAll() {
     navigator.clipboard.writeText(rawOutputText).then(() => {
       const btn = document.querySelector('.btn-copy');
