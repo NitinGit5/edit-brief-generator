@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Edit Brief Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #080808;
+    --surface: #111111;
+    --surface2: #181818;
+    --border: #222222;
+    --border-bright: #333333;
+    --accent: #B10000;
+    --accent-dim: rgba(177,0,0,0.15);
+    --accent-glow: rgba(177,0,0,0.35);
+    --text: #f0ede8;
+    --text-muted: #888880;
+    --text-dim: #444440;
+    --font-display: 'Bebas Neue', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 15px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grain overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+    opacity: 0.028;
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  /* Header */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 28px 40px;
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    animation: fadeDown 0.6s ease both;
+  }
+
+  .logo {
+    font-family: var(--font-display);
+    font-size: 32px;
+    letter-spacing: 0.04em;
+    color: var(--text);
+  }
+
+  .logo span {
+    color: var(--accent);
+  }
+
+  .logo-sub {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 300;
+  }
+
+  /* Main layout */
+  main {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 48px 40px 80px;
+  }
+
+  .section-label {
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 10px;
+    font-weight: 500;
+  }
+
+  .page-title {
+    font-family: var(--font-display);
+    font-size: 52px;
+    line-height: 0.95;
+    letter-spacing: 0.02em;
+    margin-bottom: 36px;
+    animation: fadeDown 0.6s 0.1s ease both;
+  }
+
+  /* Form */
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+    animation: fadeUp 0.6s 0.2s ease both;
+  }
+
+  .form-full {
+    grid-column: 1 / -1;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  label {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  input, select, textarea {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 14px;
+    padding: 12px 16px;
+    border-radius: 4px;
+    outline: none;
+    transition: border-color 0.2s, background 0.2s;
+    width: 100%;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--accent);
+    background: var(--surface2);
+  }
+
+  input::placeholder, textarea::placeholder {
+    color: var(--text-dim);
+  }
+
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23666' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
+    cursor: pointer;
+  }
+
+  select option { background: #111; }
+
+  textarea { resize: vertical; min-height: 90px; line-height: 1.6; }
+
+  /* Mood board checkboxes */
+  .mood-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .mood-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 13px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--text-muted);
+    transition: all 0.15s;
+    user-select: none;
+  }
+
+  .mood-chip:hover { border-color: var(--border-bright); color: var(--text); }
+
+  .mood-chip input { display: none; }
+
+  .mood-chip.active {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+    color: var(--text);
+  }
+
+  /* Submit button */
+  .btn-generate {
+    margin-top: 28px;
+    width: 100%;
+    padding: 16px 32px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    font-family: var(--font-display);
+    font-size: 22px;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
+    animation: fadeUp 0.6s 0.3s ease both;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-generate:hover {
+    background: #cc0000;
+    box-shadow: 0 0 32px var(--accent-glow);
+  }
+
+  .btn-generate:active { transform: scale(0.99); }
+
+  .btn-generate:disabled {
+    background: #2a1010;
+    color: #552020;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  /* Loader */
+  .loader {
+    display: none;
+    align-items: center;
+    gap: 14px;
+    padding: 24px 0;
+    color: var(--text-muted);
+    font-size: 13px;
+    letter-spacing: 0.05em;
+  }
+
+  .loader.active { display: flex; }
+
+  .loader-bar {
+    flex: 1;
+    height: 2px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .loader-bar::after {
+    content: '';
+    position: absolute;
+    top: 0; left: -40%;
+    width: 40%;
+    height: 100%;
+    background: var(--accent);
+    animation: slide 1.2s ease-in-out infinite;
+  }
+
+  @keyframes slide {
+    0% { left: -40%; }
+    100% { left: 100%; }
+  }
+
+  /* Output */
+  #output {
+    margin-top: 52px;
+    display: none;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  #output.visible { display: block; }
+
+  .output-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .output-title {
+    font-family: var(--font-display);
+    font-size: 36px;
+    letter-spacing: 0.03em;
+  }
+
+  .output-title span { color: var(--accent); }
+
+  .btn-copy {
+    padding: 9px 18px;
+    border: 1px solid var(--border-bright);
+    background: transparent;
+    color: var(--text-muted);
+    font-family: var(--font-body);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: all 0.2s;
+  }
+
+  .btn-copy:hover { border-color: var(--accent); color: var(--text); }
+
+  /* Guide cards */
+  .guide-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .guide-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 22px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .guide-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 2px;
+    height: 100%;
+    background: var(--accent);
+  }
+
+  .guide-card.full { grid-column: 1 / -1; }
+
+  .card-label {
+    font-size: 9px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 10px;
+    font-weight: 500;
+  }
+
+  .card-title {
+    font-family: var(--font-display);
+    font-size: 22px;
+    letter-spacing: 0.03em;
+    margin-bottom: 12px;
+    color: var(--text);
+  }
+
+  .card-body {
+    font-size: 13.5px;
+    line-height: 1.75;
+    color: #b8b4ae;
+    white-space: pre-wrap;
+  }
+
+  .card-body strong {
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  /* Download */
+  .btn-download {
+    display: block;
+    margin-top: 28px;
+    padding: 14px 32px;
+    border: 1px solid var(--border-bright);
+    background: transparent;
+    color: var(--text-muted);
+    font-family: var(--font-display);
+    font-size: 18px;
+    letter-spacing: 0.08em;
+    text-align: center;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: all 0.2s;
+    width: 100%;
+  }
+
+  .btn-download:hover {
+    border-color: var(--accent);
+    color: var(--text);
+    background: var(--accent-dim);
+  }
+
+  /* Animations */
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Divider */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 32px 0;
+  }
+
+  /* Error */
+  .error-msg {
+    padding: 14px 18px;
+    background: rgba(177,0,0,0.1);
+    border: 1px solid rgba(177,0,0,0.3);
+    border-radius: 4px;
+    color: #ff6b6b;
+    font-size: 13px;
+    margin-top: 16px;
+    display: none;
+  }
+
+  .error-msg.visible { display: block; }
+
+  @media (max-width: 600px) {
+    header { padding: 20px; }
+    main { padding: 32px 20px 60px; }
+    .form-grid { grid-template-columns: 1fr; }
+    .guide-grid { grid-template-columns: 1fr; }
+    .page-title { font-size: 38px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">BRIEF<span>GEN</span></div>
+  <div class="logo-sub">Edit Style Guide Generator</div>
+</header>
+
+<main>
+  <div class="section-label">Client Intake</div>
+  <h1 class="page-title">Turn a client brief<br>into a shoot-ready guide.</h1>
+
+  <div class="form-grid">
+
+    <div class="field">
+      <label>Client / Project Name</label>
+      <input type="text" id="client" placeholder="e.g. Aryan Kapoor Wedding">
+    </div>
+
+    <div class="field">
+      <label>Video Type</label>
+      <select id="video-type">
+        <option value="">Select type...</option>
+        <option>Wedding film</option>
+        <option>Music video</option>
+        <option>Brand / commercial</option>
+        <option>Travel / cinematic vlog</option>
+        <option>Short film</option>
+        <option>Documentary</option>
+        <option>Social media reel</option>
+        <option>Product showcase</option>
+        <option>Event highlight</option>
+        <option>Other</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Target Platform</label>
+      <select id="platform">
+        <option value="">Select platform...</option>
+        <option>Instagram Reels</option>
+        <option>YouTube</option>
+        <option>YouTube Shorts</option>
+        <option>Facebook</option>
+        <option>Wedding film (personal)</option>
+        <option>Cinema / festival</option>
+        <option>Website</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Approx. Duration</label>
+      <select id="duration">
+        <option value="">Select length...</option>
+        <option>15–30 seconds (reel)</option>
+        <option>1–2 minutes</option>
+        <option>3–5 minutes</option>
+        <option>5–10 minutes</option>
+        <option>10–20 minutes (full film)</option>
+        <option>20+ minutes</option>
+      </select>
+    </div>
+
+    <div class="field form-full">
+      <label>Mood & Vibe</label>
+      <div class="mood-grid" id="mood-grid">
+        <label class="mood-chip"><input type="checkbox" value="Cinematic"> Cinematic</label>
+        <label class="mood-chip"><input type="checkbox" value="Emotional / teary"> Emotional</label>
+        <label class="mood-chip"><input type="checkbox" value="High energy"> High energy</label>
+        <label class="mood-chip"><input type="checkbox" value="Dark & moody"> Dark & moody</label>
+        <label class="mood-chip"><input type="checkbox" value="Warm & golden"> Warm & golden</label>
+        <label class="mood-chip"><input type="checkbox" value="Clean & minimal"> Clean & minimal</label>
+        <label class="mood-chip"><input type="checkbox" value="Vintage / film grain"> Vintage / film</label>
+        <label class="mood-chip"><input type="checkbox" value="Fast cuts & kinetic"> Kinetic</label>
+        <label class="mood-chip"><input type="checkbox" value="Slow & dreamy"> Slow & dreamy</label>
+        <label class="mood-chip"><input type="checkbox" value="Bold & commercial"> Bold & commercial</label>
+      </div>
+    </div>
+
+    <div class="field form-full">
+      <label>Music Vibe (describe or give examples)</label>
+      <input type="text" id="music" placeholder="e.g. orchestral swells, lo-fi hip hop, Arijit Singh ballad style, no lyrics...">
+    </div>
+
+    <div class="field form-full">
+      <label>Reference Videos or Editors (if any)</label>
+      <input type="text" id="references" placeholder="e.g. Edit Lobby style, Stillmotion, Sam Kolder, @username on IG...">
+    </div>
+
+    <div class="field form-full">
+      <label>Client's Own Words / Key Brief Details</label>
+      <textarea id="notes" placeholder="Paste any message or notes from the client here. The more detail, the better the output."></textarea>
+    </div>
+
+  </div>
+
+  <button class="btn-generate" id="generate-btn" onclick="generateBrief()">
+    GENERATE EDIT GUIDE
+  </button>
+
+  <div class="error-msg" id="error-msg"></div>
+
+  <div class="loader" id="loader">
+    <span>Crafting your guide</span>
+    <div class="loader-bar"></div>
+  </div>
+
+  <div id="output">
+    <div class="output-header">
+      <div class="output-title">EDIT <span>GUIDE</span></div>
+      <button class="btn-copy" onclick="copyAll()">COPY ALL</button>
+    </div>
+
+    <div class="guide-grid" id="guide-cards"></div>
+
+    <button class="btn-download" onclick="downloadTxt()">↓ DOWNLOAD AS TXT</button>
+  </div>
+
+</main>
+
+<script>
+  // Mood chip toggle
+  document.querySelectorAll('.mood-chip').forEach(chip => {
+    chip.addEventListener('click', () => chip.classList.toggle('active'));
+  });
+
+  let rawOutputText = '';
+
+  async function generateBrief() {
+    const client    = document.getElementById('client').value.trim();
+    const videoType = document.getElementById('video-type').value;
+    const platform  = document.getElementById('platform').value;
+    const duration  = document.getElementById('duration').value;
+    const music     = document.getElementById('music').value.trim();
+    const refs      = document.getElementById('references').value.trim();
+    const notes     = document.getElementById('notes').value.trim();
+    const moods     = [...document.querySelectorAll('.mood-chip.active')].map(c => c.querySelector('input').value);
+
+    const errorEl = document.getElementById('error-msg');
+    errorEl.classList.remove('visible');
+
+    if (!videoType || moods.length === 0) {
+      errorEl.textContent = 'Please select a video type and at least one mood.';
+      errorEl.classList.add('visible');
+      return;
+    }
+
+    const btn = document.getElementById('generate-btn');
+    btn.disabled = true;
+    document.getElementById('loader').classList.add('active');
+    document.getElementById('output').classList.remove('visible');
+
+    const prompt = `You are a senior video editor and creative director. A client has submitted the following brief. Generate a professional, shoot-ready Edit Style Guide.
+
+CLIENT BRIEF:
+- Project: ${client || 'Untitled project'}
+- Video type: ${videoType}
+- Platform: ${platform || 'Not specified'}
+- Duration: ${duration || 'Not specified'}
+- Mood/vibe: ${moods.join(', ')}
+- Music vibe: ${music || 'Not specified'}
+- Reference editors/videos: ${refs || 'None provided'}
+- Client notes: ${notes || 'None provided'}
+
+Return ONLY a JSON object with these exact keys (no markdown, no backticks, no explanation):
+{
+  "pacing": {
+    "title": "Pacing & Cuts",
+    "content": "Detailed guidance on cuts per minute, rhythm, when to use slow motion, when to cut fast, how to build tension and release. 4–6 sentences."
+  },
+  "colorGrade": {
+    "title": "Color Grade Direction",
+    "content": "Specific color grading direction: shadows, highlights, skin tones, LUT style recommendations, contrast level, saturation. 4–6 sentences."
+  },
+  "musicSync": {
+    "title": "Music & Sound Design",
+    "content": "How to sync cuts to music, recommended BPM range, when to use silence or ambient audio, layering strategy, when to let audio breathe. 4–6 sentences."
+  },
+  "motionStyle": {
+    "title": "Motion & Transitions",
+    "content": "Recommended transitions (cuts, whip pans, speed ramps, dissolves), camera movement handling in post, stabilization approach, motion blur settings. 4–6 sentences."
+  },
+  "textCaptions": {
+    "title": "Text & Captions",
+    "content": "Whether to use text overlays, font style direction, kinetic typography vs static, lower thirds approach, caption placement. 3–4 sentences."
+  },
+  "deliverables": {
+    "title": "Deliverables Checklist",
+    "content": "List of specific files to deliver, export settings for the platform, aspect ratios, resolution, codec, color space. Format as clear line items."
+  },
+  "directorNote": {
+    "title": "Director's Note",
+    "content": "A 2–3 sentence creative statement capturing the soul of this edit — what feeling should the viewer be left with? Use this to align editor and client."
+  }
+}`;
+
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+
+      const data = await response.json();
+      const raw = data.content?.map(b => b.text || '').join('');
+      const clean = raw.replace(/```json|```/g, '').trim();
+      const guide = JSON.parse(clean);
+
+      renderGuide(guide, client);
+
+    } catch (err) {
+      errorEl.textContent = 'Something went wrong generating the guide. Please try again.';
+      errorEl.classList.add('visible');
+      console.error(err);
+    } finally {
+      btn.disabled = false;
+      document.getElementById('loader').classList.remove('active');
+    }
+  }
+
+  function renderGuide(guide, client) {
+    const container = document.getElementById('guide-cards');
+    container.innerHTML = '';
+    rawOutputText = `EDIT STYLE GUIDE — ${client || 'Project'}\n${'='.repeat(50)}\n\n`;
+
+    const fullWidthKeys = ['directorNote', 'deliverables'];
+
+    Object.entries(guide).forEach(([key, section]) => {
+      const card = document.createElement('div');
+      card.className = 'guide-card' + (fullWidthKeys.includes(key) ? ' full' : '');
+
+      const labelEl = document.createElement('div');
+      labelEl.className = 'card-label';
+      labelEl.textContent = section.title;
+
+      const titleEl = document.createElement('div');
+      titleEl.className = 'card-title';
+      titleEl.textContent = section.title;
+
+      const bodyEl = document.createElement('div');
+      bodyEl.className = 'card-body';
+      bodyEl.textContent = section.content;
+
+      card.appendChild(labelEl);
+      card.appendChild(bodyEl);
+      container.appendChild(card);
+
+      rawOutputText += `${section.title.toUpperCase()}\n${'-'.repeat(30)}\n${section.content}\n\n`;
+    });
+
+    document.getElementById('output').classList.add('visible');
+    document.getElementById('output').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function copyAll() {
+    navigator.clipboard.writeText(rawOutputText).then(() => {
+      const btn = document.querySelector('.btn-copy');
+      btn.textContent = 'COPIED ✓';
+      setTimeout(() => btn.textContent = 'COPY ALL', 2000);
+    });
+  }
+
+  function downloadTxt() {
+    const blob = new Blob([rawOutputText], { type: 'text/plain' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'edit-style-guide.txt';
+    a.click();
+  }
+</script>
+</body>
+</html>
